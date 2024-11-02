@@ -20,7 +20,7 @@ let logicalTime;
 
 // Canal para recibir nuevas conexiones 
 io.on('connection', function (socket) {
-    console.log('Alguien se ha conectado con Sockets');
+    logger('WS', 'connection', 'Alguien se ha conectado con Sockets')
 });
 
 // Método para enviar la hora al front 
@@ -37,11 +37,16 @@ function createLogicalClock() {
 function newTimeInterval() {
     const numbers = [4000, 2000, 500, 300];
     const randomIndex = Math.floor(Math.random() * numbers.length);
-    console.log("El intervalo de tiempo elegido es de: ",numbers[randomIndex], "ms")
+    logger('', 'newTimeInterval', `El intervalo de tiempo elegido es de: ${numbers[randomIndex]} ms`);
     return numbers[randomIndex];
 }
 
 createLogicalClock();
+
+// Método para mostarr logs en formato
+function logger(protocol, endpoint, message) {
+    console.log(`${new Date(logicalTime).toLocaleTimeString()} | ${protocol} | ${endpoint} | ${message}`);
+}
 
 // Método para enviar la hora actual al coordinador
 app.get('/sendHour', async (req, res) => {
@@ -59,5 +64,5 @@ app.get('/sendHour', async (req, res) => {
 // });
 
 page.listen(portClient, function () {
-    console.log(`servidor corriendo en http://${ipClient}:${portClient}`)
+    logger('HTTP', 'Listen', `Servidor escuchando en http://${ipClient}:${portClient}` );
 });
