@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coordinator</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+</head>
+<body>
+    <div id="app">
+        <h1>Coordinador</h1>
+        <button @click="fetchLogs">Lanzar instancia</button>
+        <button @click="fetchLogs">Algoritmo de Berkeley</button>
+        <div v-for="serverInfo in serversLogs" :key="serverInfo.server.ipServer">
+            <div class="server-info">
+                <h3>Servidor: {{serverInfo.server.ipServer}}:{{ serverInfo.server.portServer }}</h3>
+                <p>Peticiones por minuto: {{ serverInfo.server.petitions }}</p>
+                <h4>Logs:</h4>
+                <pre>{{ serverInfo.logs }}</pre>
+            </div>
+        </div>
+    </div>
+    <script src="coordinator.js"></script>
+</body>
+</html>
