@@ -22,6 +22,7 @@ app.put('/addServer', async (req, res) => {
     const data = req.body;
     const serverFound = servers.find(server => server.ipServer === data.ip && server.portServer === data.port);
     let currentTime = await hourAPI();
+    console.log(currentTime);
     if (serverFound) {
         res.send({ answer: currentTime })
         logger('HTTP', 'addServer', `Servidor de ip ${data.ip} y de puerto ${data.port} está en linea de nuevo`)
@@ -34,28 +35,29 @@ app.put('/addServer', async (req, res) => {
 
 app.get('/sincHour', async (req, res) => {
     let currentTime = await hourAPI();
-    if (!isNaN(currentTime)) {
-        logger('HTTP', 'sincHour', `Hora de referencia: ${currentTime}`);
-        let diferenceTime = await askHours(currentTime);
-        let averageDiference = diferenceTime / (servers.length+1);
-        console.log('Ajuste promedio: ', averageDiference)
-        await sendAdjustment(averageDiference);
-        res.send({ message: `Hora sincronizada en los servidores` })
-    }
+    logger('HTTP', 'sincHour', `Hora de referencia: ${currentTime}`);
+    let diferenceTime = await askHours(currentTime);
+    let averageDiference = diferenceTime / (servers.length + 1);
+    console.log('Ajuste promedio: ', averageDiference)
+    await sendAdjustment(averageDiference);
+    res.send({ message: `Hora sincronizada en los servidores` })
 });
 
 async function hourAPI() {
-    let currentTime;
     try {
-        const response = await fetch('https://timeapi.io/api/time/current/zone?timeZone=America%2FBogota');
+        const response = await fetch('http://worldclockapi.com/api/json/utc/now');
         const data = await response.json();
-        currentTime = new Date(data.dateTime);
+
+        let utcDate = new Date(data.currentDateTime);
+        let colombiaTimeDate = new Date(utcDate.getTime());
+
+        return colombiaTimeDate;
     } catch (error) {
-        console.error('ERROR AL CONSEGUIR LA HORA DE LA API');
-        console.log(error);
+        console.error('Error al obtener la hora:', error);
+        throw new Error('Error al obtener la hora de la API');
     }
-    return currentTime;
 }
+
 
 async function askHours(currentTime) {
     let diferenceTime = 0;
@@ -66,7 +68,8 @@ async function askHours(currentTime) {
         servers[i].currentTime = hour;
         logger('HTTP', 'sincHour', `Hora servidor del puerto ${servers[i].portServer}: ${hour}`)
         diferenceTime += (hour - currentTime);
-        servers[i].difference = diferenceTime;
+        let diferenceClient = (hour - currentTime);
+        servers[i].difference = diferenceClient;
     }
     return diferenceTime;
 }
@@ -83,14 +86,6 @@ async function sendAdjustment(averageDiference) {
             },
             body: JSON.stringify({ adjustmentTime: timeSetting })
         });
-        /**
-        try {
-             
-            
-        } catch (error) {
-            console.log(`Error en el servidor ${servers[i].ipServer}:${servers[i].portServer}:`, error);
-        }
-        */
     }
 }
 
