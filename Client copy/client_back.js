@@ -4,7 +4,7 @@ require('dotenv').config({ path: ".env" });
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true })); 
 
 app.use(express.static('public'))
 
@@ -14,7 +14,7 @@ var io = require('socket.io')(page);
 const ipClient = process.env.IP_CLIENT;
 const portClient = process.env.PORT_CLIENT;
 const ipCoordinator = process.env.IP_COORDINATOR;
-const portCoordinator = process.env.PORT_COORDINATOR;
+const portCoordinator = process.env.PORT_COORDINATOR; 
 
 let logicalTime;
 
@@ -46,7 +46,7 @@ io.on('connection', function (socket) {
     logger('WS', 'connection', 'Alguien se ha conectado con Sockets')
 });
 
-// Método para enviar la hora al front   
+// Método para enviar la hora al front 
 function createLogicalClock() {
     setInterval(() => {
         newTime = new Date(logicalTime.getTime() + 1000); 
@@ -61,7 +61,7 @@ function newTimeInterval() {
     const numbers = [4000, 2000, 500, 300];
     const randomIndex = Math.floor(Math.random() * numbers.length);
     logger('', 'newTimeInterval', `El intervalo de tiempo elegido es de: ${numbers[randomIndex]} ms`);
-    return numbers[randomIndex]; 
+    return numbers[randomIndex];
 }
 
 createLogicalClock();

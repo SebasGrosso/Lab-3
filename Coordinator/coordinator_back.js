@@ -16,11 +16,91 @@ const portClient = process.env.PORT_CLIENT;
 const ipCoordinator = process.env.IP_COORDINATOR;
 const portCoordinator = process.env.PORT_COORDINATOR;
 
+let servers = [];
+
+app.put('/addServer', async (req, res) => {
+    const data = req.body;
+    const serverFound = servers.find(server => server.ipServer === data.ip && server.portServer === data.port);
+    let currentTime = await hourAPI();
+    if (serverFound) {
+        res.send({ answer: currentTime })
+        logger('HTTP', 'addServer', `Servidor de ip ${data.ip} y de puerto ${data.port} está en linea de nuevo`)
+    } else {
+        servers.push({ nameServer: `server${servers.length}`, ipServer: data.ip, portServer: data.port, currentTime: '', difference: 0 })
+        res.send({ answer: currentTime })
+        logger('HTTP', 'addServer', `El servidor de ip ${data.ip} y de puerto ${data.port} fue agregado`)
+    }
+});
+
+app.get('/sincHour', async (req, res) => {
+    let currentTime = await hourAPI();
+    if (!isNaN(currentTime)) {
+        logger('HTTP', 'sincHour', `Hora de referencia: ${currentTime}`);
+        let diferenceTime = await askHours(currentTime);
+        let averageDiference = diferenceTime / (servers.length+1);
+        console.log('Ajuste promedio: ', averageDiference)
+        await sendAdjustment(averageDiference);
+        res.send({ message: `Hora sincronizada en los servidores` })
+    }
+});
+
+async function hourAPI() {
+    let currentTime;
+    try {
+        const response = await fetch('https://timeapi.io/api/time/current/zone?timeZone=America%2FBogota');
+        const data = await response.json();
+        currentTime = new Date(data.dateTime);
+    } catch (error) {
+        console.error('ERROR AL CONSEGUIR LA HORA DE LA API');
+        console.log(error);
+    }
+    return currentTime;
+}
+
+async function askHours(currentTime) {
+    let diferenceTime = 0;
+    for (let i = 0; i < servers.length; i++) {
+        let response = await fetch(`http://${servers[i].ipServer}:${servers[i].portServer}/sendHour`);
+        let time = await response.json();
+        let hour = new Date(time.hour);
+        servers[i].currentTime = hour;
+        logger('HTTP', 'sincHour', `Hora servidor del puerto ${servers[i].portServer}: ${hour}`)
+        diferenceTime += (hour - currentTime);
+        servers[i].difference = diferenceTime;
+    }
+    return diferenceTime;
+}
+
+async function sendAdjustment(averageDiference) {
+    for (let i = 0; i < servers.length; i++) {
+        console.log('Diferencia', servers[i].difference)
+        let timeSetting = averageDiference - servers[i].difference;
+        logger('HTTP', 'sincHour', `tiempo a ajustar en el servidor ${servers[i].ipServer}:${servers[i].portServer}: ${(timeSetting / 1000)}s`);
+        fetch(`http://${servers[i].ipServer}:${servers[i].portServer}/updateHour`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ adjustmentTime: timeSetting })
+        });
+        /**
+        try {
+             
+            
+        } catch (error) {
+            console.log(`Error en el servidor ${servers[i].ipServer}:${servers[i].portServer}:`, error);
+        }
+        */
+    }
+}
 
 
+function logger(protocol, endpoint, message) {
+    console.log(`${new Date(Date.now()).toLocaleTimeString()} | ${protocol} | ${endpoint} | ${message}`);
+}
 
-page.listen(portClient, function () {
-    logger('HTTP', 'Listen', `Servidor escuchando en http://${ipClient}:${portClient}` );
+page.listen(portCoordinator, function () {
+    logger('HTTP', 'Listen', `Servidor escuchando en http://${ipCoordinator}:${portCoordinator}`);
 });
 
 // async fetchLogs() {

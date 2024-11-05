@@ -4,7 +4,7 @@ new Vue({
         serversLogs: [],
         referenceTime: '',
         ipCoordinatorBack: 'localhost',
-        portCoordinatorBack: '4000'
+        portCoordinatorBack: '5000'
     },
     methods: {
         async fetchTime() {
@@ -13,7 +13,7 @@ new Vue({
                 const response = await fetch('https://timeapi.io/api/time/current/zone?timeZone=America%2FBogota');
                 if (response.ok) {
                     const data = await response.json();
-                    this.referenceTime = data.time;
+                    this.referenceTime = `${data.time}:${data.seconds}`;
                     console.log("Hora de referencia:", this.referenceTime);
                 } else {
                     console.error('Error en la respuesta de la API de hora:', response.statusText);
@@ -31,9 +31,15 @@ new Vue({
             this.socket.on('currentHour', (data) => {
                 this.logicalTime = data.hour;
             });
+        },
+        async sincHour() {
+            console.log('Sincronizando las horas')
+            const response = await fetch('http://localhost:5000/sincHour');
+            const data = response.json();
+            console.log(data.message);
         }
     },
     mounted() {
-        this.socket();
+        //this.socket();
     }
 });

@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coordinator</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
 </head>
 <body>
     <div id="app">
         <h1>Coordinador</h1>
-        <button @click="fetchLogs">Lanzar instancia</button>
-        <button @click="fetchLogs">Algoritmo de Berkeley</button>
+        <button @click="sincHour">Lanzar instancia</button>
+        <button @click="sincHour">Algoritmo de Berkeley</button>
         <div v-for="serverInfo in serversLogs" :key="serverInfo.server.ipServer">
             <div class="server-info">
                 <h3>Servidor: {{serverInfo.server.ipServer}}:{{ serverInfo.server.portServer }}</h3>
