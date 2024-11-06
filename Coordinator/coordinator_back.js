@@ -43,18 +43,28 @@ app.get('/sincHour', async (req, res) => {
     res.send({ message: `Hora sincronizada en los servidores` })
 });
 
+let numberOfAttempts = 0;
+
 async function hourAPI() {
+    logger('HTTP', 'houtAPI', 'obteniendo la hora de la API');
     try {
         const response = await fetch('http://worldclockapi.com/api/json/utc/now');
         const data = await response.json();
 
         let utcDate = new Date(data.currentDateTime);
         let colombiaTimeDate = new Date(utcDate.getTime());
+        numberOfAttempts = 0;
+        console.log('Hora de la api obtenida');
 
         return colombiaTimeDate;
     } catch (error) {
-        console.error('Error al obtener la hora:', error);
-        throw new Error('Error al obtener la hora de la API');
+        if (numberOfAttempts < 5) {
+            numberOfAttempts++;
+            console.error(`Error al obtener la hora de la API, reintentando por ${numberOfAttempts + 1} vez...`);
+            return await hourAPI();
+        }else{
+            console.error('No fue posible obtener la hora de la API');
+        }
     }
 }
 

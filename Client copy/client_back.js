@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config({ path: ".env" });
 const app = express();
 app.use(cors());
@@ -17,24 +19,37 @@ const ipCoordinator = process.env.IP_COORDINATOR;
 const portCoordinator = process.env.PORT_COORDINATOR;
 
 let logicalTime;
+let numberOfAttempts = 0;
 
 
 async function connect() {
     console.log('Realizando conexión');
     logger('HTTP', 'addServer', "Realizando conexión");
-    let response = await fetch(`http://${ipCoordinator}:${portCoordinator}/addServer`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ ip: ipClient, port: portClient })
-    })
-    let data = await response.json();
-    
-    logicalTime = new Date(data.answer);
-    logger('HTTP', 'addServer', data.answer);
+    try {
+        let response = await fetch(`http://${ipCoordinator}:${portCoordinator}/addServer`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ip: ipClient, port: portClient })
+        })
+        let data = await response.json();
 
-    createLogicalClock();
+        logicalTime = new Date(data.answer);
+        logger('HTTP', 'addServer', data.answer);
+
+        createLogicalClock();
+        modifyPort();
+        numberOfAttempts = 0;
+    } catch (error) {
+        if (numberOfAttempts <= 10) {
+            console.error('Error al conectarse al coordindador, reintentando...')
+            connect();
+        } else {
+            console.error('El coordinador no está disponible')
+        }
+        numberOfAttempts++;
+    }
 }
 
 connect();
@@ -52,6 +67,44 @@ function createLogicalClock() {
         const hourClient = { hour: logicalTime };
         io.emit('currentHour', hourClient);
     }, newTimeInterval());
+}
+
+//
+function modifyPort() {
+    let data = '';
+    try {
+        data = fs.readFileSync('./public/client.js', 'utf8');
+    } catch (err) {
+        console.error('Error al leer el archivo:', err);
+    }
+
+    let lines = data.split('\n');
+    let ipLineFound = false;
+    let portLineFound = false;
+
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].includes('ipClientBack:')) {
+            lines[i] = `        ipClientBack:"${ipClient}",`;
+            ipLineFound = true;
+        }
+        if (lines[i].includes('portClientBack:')) {
+            lines[i] = `        portClientBack:"${portClient}"`
+            portLineFound = true;
+        }
+        data = lines.join('\n')
+    }
+
+    const filePath = path.join(__dirname, 'public', 'client.js');
+
+    const content = data;
+
+    fs.writeFile(filePath, content, (err) => {
+        if (err) {
+            console.error('Error al crear o guardar el archivo:', err);
+            return;
+        }
+        console.log('Puerto cambiado exitosamente');
+    });
 }
 
 // Método para elegir un intervalo de tiempo aleatorio
@@ -78,7 +131,7 @@ app.get('/sendHour', async (req, res) => {
 app.post('/updateHour', async (req, res) => {
     console.log('Comenzando la sincronización');
     const data = req.body;
-    console.log("El ajuste que llegó es de: ",data.adjustmentTime)
+    console.log("El ajuste que llegó es de: ", data.adjustmentTime)
     logicalTime = new Date(logicalTime.getTime() + data.adjustmentTime);
     logger('HTTP', 'updateHour', `La hora ha sido sincronizada`);
 });
