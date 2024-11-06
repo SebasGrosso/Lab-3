@@ -24,7 +24,7 @@ let numberOfAttempts = 0;
 
 async function connect() {
     console.log('Realizando conexión');
-    logger('HTTP', 'addServer', "Realizando conexión");
+    logger('HTTP', 'connect', "Realizando conexión");
     try {
         let response = await fetch(`http://${ipCoordinator}:${portCoordinator}/addServer`, {
             method: 'PUT',
@@ -69,7 +69,7 @@ function createLogicalClock() {
     }, newTimeInterval());
 }
 
-//
+// Método para cambiar el pueto y la ip del front del cliente automaticamente
 function modifyPort() {
     let data = '';
     try {
@@ -79,26 +79,13 @@ function modifyPort() {
     }
 
     let lines = data.split('\n');
-    let ipLineFound = false;
-    let portLineFound = false;
 
-    for (let i = 0; i < lines.length; i++) {
-        if (lines[i].includes('ipClientBack:')) {
-            lines[i] = `        ipClientBack:"${ipClient}",`;
-            ipLineFound = true;
-        }
-        if (lines[i].includes('portClientBack:')) {
-            lines[i] = `        portClientBack:"${portClient}"`
-            portLineFound = true;
-        }
-        data = lines.join('\n')
-    }
+    lines[4] = `        ipClientBack:"${ipClient}",`;
+    lines[5] = `        portClientBack:"${portClient}"`;
 
     const filePath = path.join(__dirname, 'public', 'client.js');
 
-    const content = data;
-
-    fs.writeFile(filePath, content, (err) => {
+    fs.writeFile(filePath, data, (err) => {
         if (err) {
             console.error('Error al crear o guardar el archivo:', err);
             return;
@@ -116,7 +103,7 @@ function newTimeInterval() {
 }
 
 
-// Método para mostarr logs en formato
+// Método para mostar logs en formato
 function logger(protocol, endpoint, message) {
     console.log(`${new Date(Date.now()).toLocaleTimeString()} | ${protocol} | ${endpoint} | ${message}`);
 }

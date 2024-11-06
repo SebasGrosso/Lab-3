@@ -2,8 +2,8 @@ new Vue({
     el: '#app',
     data: {
         logicalTime: '',
-        ipClientBack:"localhost",
-        portClientBack:"4001"
+        ipClientBack:'',
+        portClientBack:''
     },
     methods: {
         socket() {
