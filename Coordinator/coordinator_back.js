@@ -35,6 +35,18 @@ app.put('/addServer', async (req, res) => {
     }
 });
 
+// Canal para recibir nuevas conexiones 
+io.on('connection', (socket) => {
+    logger('WS', 'connection', 'Alguien se ha conectado con Sockets');
+    socket.on('logs', (data) => {
+        console.log(`Cliente ${data.ip}:${data.port}= `, data.content);
+    });
+});
+
+
+
+
+
 // Método para ??
 app.get('/sincHour', async (req, res) => {
     let currentTime = await hourAPI();
@@ -53,7 +65,7 @@ async function hourAPI() {
     try {
         const response = await fetch('http://worldclockapi.com/api/json/utc/now');
         const data = await response.json();
-        
+
         let utcDate = new Date(data.currentDateTime);
         let colombiaTimeDate = new Date(utcDate.getTime());
         numberOfAttempts = 0;
@@ -65,7 +77,7 @@ async function hourAPI() {
             numberOfAttempts++;
             console.error(`Error al obtener la hora de la API, reintentando por ${numberOfAttempts + 1} vez...`);
             return await hourAPI();
-        }else{
+        } else {
             console.error('No fue posible obtener la hora de la API');
         }
     }
