@@ -27,12 +27,12 @@ let numberOfAttempts = 0;
 const socket = io_client.connect(`http://${ipCoordinator}:${portCoordinator}`, { 'forceNew': true });
 
 socket.on('connect', () => {
-  logger(' WS ', 'connect', "Conectado al servidor de WebSocket");
+  logger(' WS ', 'connect        ', "Conectado al servidor de WebSocket");
 });
 
 // Método para conectarse por websockets al front del cliente
 async function connect() {
-    logger('HTTP', 'connect', "Realizando conexión");
+    logger('HTTP', 'connect        ', "Realizando conexión");
     try {
         let response = await fetch(`http://${ipCoordinator}:${portCoordinator}/addServer`, {
             method: 'PUT',
@@ -44,7 +44,7 @@ async function connect() {
         let data = await response.json();
 
         logicalTime = new Date(data.answer);
-        logger('HTTP', 'addServer', `La hora enviada por el coordinador es: ${new Date (data.answer).toLocaleTimeString()}`);
+        logger('HTTP', 'addServer     ', `La hora enviada por el coordinador es: ${new Date (data.answer).toLocaleTimeString()}`);
 
         createLogicalClock();
         modifyPort();
@@ -68,7 +68,7 @@ function stopTime(time) {
 
 // Canal para recibir nuevas conexiones 
 io.on('connection', function (socket) {
-    logger(' WS ', 'connection', 'El front del cliente se ha conectado con Sockets')
+    logger(' WS ', 'connection     ', 'El front del cliente se ha conectado con Sockets')
 });
 
 // Método para enviar la hora al front   
@@ -102,7 +102,7 @@ function modifyPort() {
             console.error('Error al crear o guardar el archivo:', err);
             return;
         }
-        logger(' JS ', 'modifyPort', 'Puerto cambiado exitosamente');
+        logger(' JS ', 'modifyPort     ', 'Puerto cambiado exitosamente');
     });
 }
 
@@ -131,15 +131,15 @@ app.get('/sendHour', async (req, res) => {
 
 // Métod para recibir al ajuste de la hora
 app.post('/updateHour', async (req, res) => {
-    logger('HTTP', 'updateHour', 'Comenzando la sincronización')
+    logger('HTTP', 'updateHour     ', 'Comenzando la sincronización')
     const data = req.body;
-    logger('HTTP', 'updateHour', `El ajuste que llegó es de: ${data.adjustmentTime}`)
+    logger('HTTP', 'updateHour     ', `El ajuste que llegó es de: ${data.adjustmentTime}`)
     logicalTime = new Date(logicalTime.getTime() + data.adjustmentTime);
-    logger('HTTP', 'updateHour', `La hora ha sido sincronizada`);
+    logger('HTTP', 'updateHour     ', `La hora ha sido sincronizada`);
 });
 
 page.listen(portClient, function () {
-    logger('HTTP', 'Listen', `Servidor escuchando en http://${ipClient}:${portClient}`);
+    logger('HTTP', 'Listen         ', `Servidor escuchando en http://${ipClient}:${portClient}`);
 });
 
 // Llamados a los métodos

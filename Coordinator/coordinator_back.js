@@ -25,23 +25,23 @@ app.put('/addServer', async (req, res) => {
     const data = req.body;
     const serverFound = servers.find(server => server.ipServer === data.ip && server.portServer === data.port);
     let currentTime = await hourAPI();
-    logger('HTTP', 'addServer', `La hora a enviar al servidor: ${data.ip}:${data.port} es: ${currentTime}`);
+    logger('HTTP', 'addServer     ', `La hora a enviar al servidor: ${data.ip}:${data.port} es: ${currentTime}`);
     if (serverFound) {
         res.send({ answer: currentTime })
-        logger('HTTP', 'addServer', `Servidor de ip ${data.ip}:${data.port} está en linea de nuevo`)
+        logger('HTTP', 'addServer     ', `Servidor de ip ${data.ip}:${data.port} está en linea de nuevo`)
     } else {
         servers.push({ nameServer: `Server ${servers.length+1}`, ipServer: data.ip, portServer: data.port, currentTime: '', difference: 0 })
         res.send({ answer: currentTime })
-        logger('HTTP', 'addServer', `El servidor ${data.ip}:${data.port} fue agregado`)
+        logger('HTTP', 'addServer     ', `El servidor ${data.ip}:${data.port} fue agregado`)
         io.emit('serversList', servers);
     }
 });
 
 // Canal para recibir nuevas conexiones 
 io.on('connection', (socket) => {
-    logger(' WS ', 'connection', 'El front del coordinador se ha conectado con Sockets');
+    logger(' WS ', 'connection    ', 'El front del coordinador se ha conectado con Sockets');
     socket.on('logs', (data) => {
-        logger(' WS ', 'logs', `El cliente ${data.ip}:${data.port} envió --> ${data.content}`);
+        logger(' WS ', 'logs          ', `El cliente ${data.ip}:${data.port} envió --> ${data.content}`);
     });
 });
 
@@ -49,10 +49,10 @@ io.on('connection', (socket) => {
 // Método para ??
 app.get('/syncHour', async (req, res) => {
     let currentTime = await hourAPI();
-    logger('HTTP', 'syncHour', `Hora de referencia: ${currentTime}`);
+    logger('HTTP', 'syncHour      ', `Hora de referencia: ${currentTime}`);
     let diferenceTime = await askHours(currentTime);
     let averageDiference = diferenceTime / (servers.length + 1);
-    logger('HTTP', 'syncHour', `El ajuste promedio es: ${averageDiference / 1000}s`);
+    logger('HTTP', 'syncHour      ', `El ajuste promedio es: ${averageDiference / 1000}s`);
     await sendAdjustment(averageDiference);
     res.send({ message: `Hora sincronizada en los servidores` })
     io.emit('hourCoordinator', currentTime);
@@ -61,7 +61,7 @@ app.get('/syncHour', async (req, res) => {
 
 // Método para pedir la hora a la API
 async function hourAPI() {
-    logger('HTTP', 'hourAPI', 'obteniendo la hora de la API');
+    logger('HTTP', 'hourAPI       ', 'obteniendo la hora de la API');
     try {
         const response = await fetch('https://timeapi.io/api/time/current/zone?timeZone=America%2FBogota');
         const data = await response.json();
@@ -69,7 +69,7 @@ async function hourAPI() {
         let utcDate = new Date(data.dateTime);
         let colombiaTimeDate = new Date(utcDate.getTime());
         numberOfAttempts = 0;
-        logger('HTTP', 'hourAPI', 'Hora de la api obtenida');
+        logger('HTTP', 'hourAPI       ', 'Hora de la api obtenida');
 
         return colombiaTimeDate;
     } catch (error) {
@@ -91,7 +91,7 @@ async function askHours(currentTime) {
         let time = await response.json();
         let hour = new Date(time.hour);
         servers[i].currentTime = hour;
-        logger('HTTP', 'syncHour', `Hora servidor del puerto ${servers[i].portServer}: ${hour}`)
+        logger('HTTP', 'syncHour      ', `Hora servidor del puerto ${servers[i].portServer}: ${hour}`)
         diferenceTime += (hour - currentTime);
         let diferenceClient = (hour - currentTime);
         servers[i].difference = diferenceClient;
@@ -190,7 +190,7 @@ function connect() {
 
 
 page.listen(portCoordinator, async function () {
-    logger('HTTP', 'Listen', `Servidor escuchando en http://${ipCoordinator}:${portCoordinator}`);
+    logger('HTTP', 'Listen        ', `Servidor escuchando en http://${ipCoordinator}:${portCoordinator}`);
     const open = await import('open');
     open.default(`http://${ipCoordinator}:${portCoordinator}`);
 });
