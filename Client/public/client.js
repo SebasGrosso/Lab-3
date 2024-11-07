@@ -6,6 +6,7 @@ new Vue({
         portClientBack:''
     },
     methods: {
+        // Método para conectarse por websockets al back del cliente
         socket() {
             this.socket = io.connect(`http://${this.ipClientBack}:${this.portClientBack}`, { 'forceNew': true });
             this.socket.on('connect', () => {

@@ -17,44 +17,47 @@ const ipCoordinator = process.env.IP_COORDINATOR;
 const portCoordinator = process.env.PORT_COORDINATOR;
 
 let servers = [];
+let numberOfAttempts = 0;
 
+// Método para que los servidores nuevos se registen y se agregan a la lista de servidores
 app.put('/addServer', async (req, res) => {
     const data = req.body;
     const serverFound = servers.find(server => server.ipServer === data.ip && server.portServer === data.port);
     let currentTime = await hourAPI();
-    console.log(currentTime);
+    logger('HTTP', 'addServer', `La hora a enviar al servidor: ${data.ip}:${data.port} es: ${currentTime}`);
     if (serverFound) {
         res.send({ answer: currentTime })
         logger('HTTP', 'addServer', `Servidor de ip ${data.ip} y de puerto ${data.port} está en linea de nuevo`)
     } else {
         servers.push({ nameServer: `server${servers.length}`, ipServer: data.ip, portServer: data.port, currentTime: '', difference: 0 })
         res.send({ answer: currentTime })
-        logger('HTTP', 'addServer', `El servidor de ip ${data.ip} y de puerto ${data.port} fue agregado`)
+        logger('HTTP', 'addServer', `El servidor ${data.ip}:${data.port} fue agregado`)
     }
 });
 
+// Método para ??
 app.get('/sincHour', async (req, res) => {
     let currentTime = await hourAPI();
     logger('HTTP', 'sincHour', `Hora de referencia: ${currentTime}`);
     let diferenceTime = await askHours(currentTime);
     let averageDiference = diferenceTime / (servers.length + 1);
-    console.log('Ajuste promedio: ', averageDiference)
+    logger('HTTP', 'sincHour', `El ajuste promedio es: ${averageDiference / 1000}s`);
     await sendAdjustment(averageDiference);
     res.send({ message: `Hora sincronizada en los servidores` })
 });
 
-let numberOfAttempts = 0;
 
+// Método para pedir la hora a la API
 async function hourAPI() {
     logger('HTTP', 'houtAPI', 'obteniendo la hora de la API');
     try {
         const response = await fetch('http://worldclockapi.com/api/json/utc/now');
         const data = await response.json();
-
+        
         let utcDate = new Date(data.currentDateTime);
         let colombiaTimeDate = new Date(utcDate.getTime());
         numberOfAttempts = 0;
-        console.log('Hora de la api obtenida');
+        logger('HTTP', 'houtAPI', 'Hora de la api obtenida');
 
         return colombiaTimeDate;
     } catch (error) {
@@ -68,7 +71,7 @@ async function hourAPI() {
     }
 }
 
-
+// Método para pedir las horas a los clientes y calcular la diferencia
 async function askHours(currentTime) {
     let diferenceTime = 0;
     for (let i = 0; i < servers.length; i++) {
@@ -84,11 +87,12 @@ async function askHours(currentTime) {
     return diferenceTime;
 }
 
+// Método para enviar ajuste a los clientes
 async function sendAdjustment(averageDiference) {
     for (let i = 0; i < servers.length; i++) {
-        console.log('Diferencia', servers[i].difference)
+        logger('', 'sendAdjustment', `La diferencia del servidor ${servers[i].ipServer}:${servers[i].portServer} es de: ${(servers[i].difference / 1000)}s`);
         let timeSetting = averageDiference - servers[i].difference;
-        logger('HTTP', 'sincHour', `tiempo a ajustar en el servidor ${servers[i].ipServer}:${servers[i].portServer}: ${(timeSetting / 1000)}s`);
+        logger('', 'sendAdjustment', `El tiempo a ajustar en el servidor ${servers[i].ipServer}:${servers[i].portServer}: ${(timeSetting / 1000)}s`);
         fetch(`http://${servers[i].ipServer}:${servers[i].portServer}/updateHour`, {
             method: 'POST',
             headers: {
@@ -99,7 +103,7 @@ async function sendAdjustment(averageDiference) {
     }
 }
 
-
+// Método para mostar logs en formato protocolo | endpoint | mensaje
 function logger(protocol, endpoint, message) {
     console.log(`${new Date(Date.now()).toLocaleTimeString()} | ${protocol} | ${endpoint} | ${message}`);
 }
