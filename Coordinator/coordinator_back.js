@@ -11,14 +11,15 @@ app.use(express.static('public'))
 var page = require('http').Server(app);
 var io = require('socket.io')(page);
 
-const ipClient = process.env.IP_CLIENT;
-const portClient = process.env.PORT_CLIENT;
 const ipCoordinator = process.env.IP_COORDINATOR;
 const portCoordinator = process.env.PORT_COORDINATOR;
+const ipComputer1 = process.env.IP_COMPUTER1;
+const ipComputer2 = process.env.IP_COMPUTER2;
 
 let servers = [];
 let numberOfAttempts = 0;
 let actualPort = 4000;
+let infoComputerSelected;
 
 // Método para que los servidores nuevos se registen y se agregan a la lista de servidores
 app.put('/addServer', async (req, res) => {
@@ -30,7 +31,7 @@ app.put('/addServer', async (req, res) => {
         res.send({ answer: currentTime })
         logger('HTTP', 'addServer     ', `Servidor de ip ${data.ip}:${data.port} está en linea de nuevo`)
     } else {
-        servers.push({ nameServer: `Server ${servers.length+1}`, ipServer: data.ip, portServer: data.port, currentTime: '', difference: 0 })
+        servers.push({ nameServer: `Server ${servers.length + 1}`, ipServer: data.ip, portServer: data.port, currentTime: '', difference: 0 })
         res.send({ answer: currentTime })
         logger('HTTP', 'addServer     ', `El servidor ${data.ip}:${data.port} fue agregado`)
         io.emit('serversList', servers);
@@ -115,22 +116,16 @@ async function sendAdjustment(averageDiference) {
     }
 }
 
-// Método para mostar logs en formato protocolo | endpoint | mensaje
-function logger(protocol, endpoint, message) {
-    console.log(`${new Date(Date.now()).toLocaleTimeString()} | ${protocol} | ${endpoint} | ${message}`);
-    io.emit('currentLogs', `${new Date(Date.now()).toLocaleTimeString()} | ${protocol} | ${endpoint} | ${message}`);
-}
-
 
 // Método para comenzar a desplegar un nuevo cliente
 app.get('/deploy', async (req, res) => {
-    console.log("Creando nueva instancia"); // logger
-  
+    logger('HTTP', 'deploy        ', 'Creando nueva instancia')
+
     chooseComputer();
     actualPort++;
-  
+
     res.status(200).send({ answer: 'OK' });
-  });
+});
 
 // Método para elegir un computador y conectarse a él
 function chooseComputer() {
@@ -145,52 +140,60 @@ function selectComputer() {
     let ipComputerSelected;
     let passwordSelected;
     let serverName;
+    console.log(number)
     if (number == 1) {
-      ipComputerSelected = ipComputer1;
-      passwordSelected = '211100'
-      serverName = 'server'
+        ipComputerSelected = ipComputer1;
+        passwordSelected = '211100'
+        serverName = 'server'
     } else {
-      ipComputerSelected = ipComputer2;
-      passwordSelected = 'sebas1502'
-      serverName = 'administrador'
+        ipComputerSelected = ipComputer2;
+        passwordSelected = 'sebas1502'
+        serverName = 'administrador'
     }
-    command = `echo "${passwordSelected}" | sudo -S docker run -e PORT=${actualPort} -e IP=${ipComputerSelected} -e IP_REGISTRY=${ipRegisterServer} -e PORT_REGISTRY=${portRegisterServer} --name server${actualPort - 5000} -p ${actualPort}:${actualPort} -d server69`;
-    nameToAdd = `server${actualPort - 5000}`
-    ipToAdd = ipComputerSelected;
-    portToAdd = actualPort;
+    // docker run -e PORT_CLIENT=4000 -e IP_CLIENT=localhost -e PORT_COORDINATOR=5000 -e IP_COORDINATOR=192.168.137.33 --name cliente_prueba -p 4000:4000 -d instancia
+    command = `echo "${passwordSelected}" | sudo -S docker run -e PORT_CLIENT=${actualPort} -e IP_CLIENT=${ipComputerSelected} -e PORT_COORDINATOR=${portCoordinator} -e IP_COORDINATOR=${ipCoordinator} --name Server${actualPort - 4000} -p ${actualPort}:${actualPort} -d instancia`;
+    // nameToAdd = `Server${actualPort - 4000}`
+    // ipToAdd = ipComputerSelected;
+    // portToAdd = actualPort;
     infoComputerSelected = { command: command, ipComputerSelected: ipComputerSelected, passwordSelected: passwordSelected, name: serverName };
-    console.log(infoComputerSelected)
+    logger(' SH ', 'selectComputer', `El computador selecionado es ${infoComputerSelected.ipComputerSelected}`)
 }
-  
+
 function connect() {
     const conn = new Client();
     conn.on('ready', () => {
-      console.log('Conexión SSH establecida');
-      conn.exec(infoComputerSelected.command, (err, stream) => {
-        if (err) throw err;
-        stream.on('close', (code, signal) => {
-          console.log('Comando finalizado con código:', code);
-          conn.end();
-        }).on('data', (data) => {
-          console.log('Salida del comando:\n' + data);
-          io.emit('chaosMessage', '');
-          servers.push({ ipServer: ipToAdd, portServer: portToAdd, failed: false, name: nameToAdd, identifier: data, isSlow: false })
-          console.log({ ipServer: ipToAdd, portServer: portToAdd, name: nameToAdd })
-        }).stderr.on('data', (data) => {
-          console.error('Error del comando:\n' + data);
+        console.log('Conexión SSH establecida');
+        conn.exec(infoComputerSelected.command, (err, stream) => {
+            if (err) throw err;
+            stream.on('close', (code, signal) => {
+                console.log('Comando finalizado con código:', code);
+                conn.end();
+            }).on('data', (data) => {
+                console.log('Salida del comando:\n' + data);
+                io.emit('chaosMessage', '');
+                // servers.push({ ipServer: ipToAdd, portServer: portToAdd, failed: false, name: nameToAdd, identifier: data, isSlow: false })
+                // console.log({ ipServer: ipToAdd, portServer: portToAdd, name: nameToAdd })
+            }).stderr.on('data', (data) => {
+                console.error('Error del comando:\n' + data);
+            });
         });
-      });
     }).connect({
-      host: infoComputerSelected.ipComputerSelected,
-      port: 22, // Puerto por defecto de SSH
-      username: infoComputerSelected.name,
-      password: infoComputerSelected.passwordSelected
+        host: infoComputerSelected.ipComputerSelected,
+        port: 22, // Puerto por defecto de SSH
+        username: infoComputerSelected.name,
+        password: infoComputerSelected.passwordSelected
     });
-  }
+}
 
+// Método para mostar logs en formato protocolo | endpoint | mensaje
+function logger(protocol, endpoint, message) {
+    console.log(`${new Date(Date.now()).toLocaleTimeString()} | ${protocol} | ${endpoint} | ${message}`);
+    io.emit('currentLogs', `${new Date(Date.now()).toLocaleTimeString()} | ${protocol} | ${endpoint} | ${message}`);
+}
 
 page.listen(portCoordinator, async function () {
     logger('HTTP', 'Listen        ', `Servidor escuchando en http://${ipCoordinator}:${portCoordinator}`);
     const open = await import('open');
-    open.default(`http://${ipCoordinator}:${portCoordinator}`);
+    // open.default(`http://${ipCoordinator}:${portCoordinator}`);
+    open.default(`http://localhost:${portCoordinator}`);
 });

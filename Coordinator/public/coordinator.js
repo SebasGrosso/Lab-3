@@ -26,9 +26,23 @@ new Vue({
                 this.referenceTime = new Date(data).toLocaleTimeString(); 
             });
         },
+        async deployServer() {
+            const response = await fetch(`http://${this.ipCoordinatorBack}:${this.portCoordinatorBack}/deploy`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+    
+            const data = await response.json();
+            
+            if (data.answer === 'OK') {
+                console.log('servidor desplegado');
+            } else {
+                console.log('no fue posible desplegar el servidor');
+            }
+        },
         async syncHour() {
             console.log('Sincronizando las horas')
-            const response = await fetch('http://localhost:5000/syncHour');
+            const response = await fetch(`http://${this.ipCoordinatorBack}:${this.portCoordinatorBack}/syncHour`);
             const data = response.json();
             console.log(data.message);
         }
