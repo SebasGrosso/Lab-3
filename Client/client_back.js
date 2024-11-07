@@ -118,8 +118,9 @@ function newTimeInterval() {
 // Método para mostar logs en formato protocolo | endpoint | mensaje
 function logger(protocol, endpoint, message) {
     let log = `${new Date(Date.now()).toLocaleTimeString()} | ${protocol} | ${endpoint} | ${message}`;
-    console.log(`${new Date(Date.now()).toLocaleTimeString()} | ${protocol} | ${endpoint} | ${message}`);
+    console.log(log);
     socket.emit('logs', {port:portClient, ip:ipClient, content:log})
+    io.emit('currentLogs', log);
 }
 
 // Método para enviar la hora actual al coordinador

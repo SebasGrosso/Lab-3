@@ -1,27 +1,12 @@
 new Vue({
     el: '#app',
     data: {
-        clientLogs: [{xd: "xd"}],
+        clientLogs: [],
         referenceTime: '',
         ipCoordinatorBack: 'localhost',
         portCoordinatorBack: '5000'
     },
     methods: {
-        // async fetchTime() {
-        //     console.log("Obteniendo la hora de referencia...");
-        //     try {
-        //         const response = await fetch('https://worldtimeapi.org/api/timezone/America/Bogota');
-        //         if (response.ok) {
-        //             const data = await response.json();
-        //             this.referenceTime = `${data.time}:${data.seconds}`;
-        //             console.log("Hora de referencia:", this.referenceTime);
-        //         } else {
-        //             console.error('Error en la respuesta de la API de hora:', response.statusText);
-        //         }
-        //     } catch (error) {
-        //         console.error('Error al obtener la hora de referencia:', error);
-        //     }
-        // },
         socket() {
             this.socket = io.connect(`http://${this.ipCoordinatorBack}:${this.portCoordinatorBack}`, { 'forceNew': true });
             this.socket.on('connect', () => {
@@ -30,7 +15,6 @@ new Vue({
 
             this.socket.on('currentLogs', (data) => {
                 this.clientLogs.push(data); 
-                console.log("alskjdf logs", this.clientLogs)
             });
         },
         async fetchTime() {

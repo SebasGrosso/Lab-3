@@ -3,7 +3,8 @@ new Vue({
     data: {
         logicalTime: '',
         ipClientBack:'',
-        portClientBack:''
+        portClientBack:'',
+        clientLogs: []
     },
     methods: {
         // Método para conectarse por websockets al back del cliente
@@ -14,6 +15,10 @@ new Vue({
 
             this.socket.on('currentHour', (data) => {
                 this.logicalTime = data.hour; 
+            });
+
+            this.socket.on('currentLogs', (data) => {
+                this.clientLogs.push(data); 
             });
         },
         formatTime(timestamp) {
