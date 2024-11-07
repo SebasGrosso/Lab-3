@@ -13,14 +13,18 @@
         <h1>Coordinador</h1>
         <button @click="sincHour">Lanzar instancia</button>
         <button @click="sincHour">Algoritmo de Berkeley</button>
-        <div v-for="serverInfo in serversLogs" :key="serverInfo.server.ipServer">
+        <div>
+            <p>{{clientLogs}}</p>
+        </div>
+        <!-- <div v-for="serverInfo in serversLogs" :key="serverInfo.server.ipServer">
             <div class="server-info">
                 <h3>Servidor: {{serverInfo.server.ipServer}}:{{ serverInfo.server.portServer }}</h3>
                 <p>Peticiones por minuto: {{ serverInfo.server.petitions }}</p>
                 <h4>Logs:</h4>
-                <pre>{{ serverInfo.logs }}</pre>
+                <pre>{{ serverInfo.logs }}</pre> -->
+                <!-- <p>{{clientLogs}}</p>
             </div>
-        </div>
+        </div>  --> 
         <button @click="fetchTime">Ver hora API</button>
         <h2>Hora API: {{ referenceTime }}</h2>
     </div>

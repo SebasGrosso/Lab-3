@@ -1,7 +1,7 @@
 new Vue({
     el: '#app',
     data: {
-        serversLogs: [],
+        clientLogs: [{xd: "xd"}],
         referenceTime: '',
         ipCoordinatorBack: 'localhost',
         portCoordinatorBack: '5000'
@@ -27,38 +27,36 @@ new Vue({
             this.socket.on('connect', () => {
                 console.log('Conectado al servidor de WebSocket');
             });
+
+            this.socket.on('currentLogs', (data) => {
+                this.clientLogs.push(data); 
+                console.log("alskjdf logs", this.clientLogs)
+            });
         },
         async fetchTime() {
             console.log("Obteniendo la hora de referencia...");
             try {
-                fetch('http://worldclockapi.com/api/json/utc/now')
-                    .then(response => response.json())
-                    .then(data => {
-                        let utcDate = new Date(data.currentDateTime);
-
-                        let colombiaTimeDate = new Date(utcDate.getTime()) ;
-
-                        let hours = colombiaTimeDate.getHours();
-                        let minutes = colombiaTimeDate.getMinutes().toString().padStart(2, '0');
-                        let seconds = colombiaTimeDate.getSeconds().toString().padStart(2, '0');
-
-                        const ampm = hours >= 12 ? 'PM' : 'AM';
-                        hours = hours % 12 || 12;
-
-                        const colombiaTime = `${hours}:${minutes}:${seconds} ${ampm}`;
-
-                        this.referenceTime = colombiaTime;
-
-                        console.log("La hora actual en Colombia es:", colombiaTime);
-                    })
-                    .catch(error => console.error("Error al obtener la hora:", error));
+                const response = await fetch('https://timeapi.io/api/time/current/zone?timeZone=America%2FBogota');
+                const data = await response.json();
+        
+                let utcDate = new Date(data.dateTime);
+                this.referenceTime = new Date(utcDate.getTime()).toLocaleTimeString();
+                numberOfAttempts = 0;
+        
+                return colombiaTimeDate;
             } catch (error) {
-                console.error('Error al obtener la hora de referencia:', error);
+                if (numberOfAttempts < 5) {
+                    numberOfAttempts++;
+                    console.error(`Error al obtener la hora de la API, reintentando por ${numberOfAttempts + 1} vez...`);
+                    return await hourAPI();
+                } else {
+                    console.error('No fue posible obtener la hora de la API');
+                }
             }
         },
-        async sincHour() {
+        async syncHour() {
             console.log('Sincronizando las horas')
-            const response = await fetch('http://localhost:5000/sincHour');
+            const response = await fetch('http://localhost:5000/syncHour');
             const data = response.json();
             console.log(data.message);
         }

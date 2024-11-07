@@ -12,6 +12,8 @@ app.use(express.static('public'))
 
 var page = require('http').Server(app);
 var io = require('socket.io')(page);
+var io_client = require('socket.io-client');
+
 
 const ipClient = process.env.IP_CLIENT;
 const portClient = process.env.PORT_CLIENT;
@@ -20,6 +22,13 @@ const portCoordinator = process.env.PORT_COORDINATOR;
 
 let logicalTime;
 let numberOfAttempts = 0;
+
+// variable que obtiene el socket al conectarse al coordinador
+const socket = io_client.connect(`http://${ipCoordinator}:${portCoordinator}`, { 'forceNew': true });
+
+socket.on('connect', () => {
+  logger(' WS ', 'connect', "Conectado al servidor de WebSocket");
+});
 
 // Método para conectarse por websockets al front del cliente
 async function connect() {
@@ -43,6 +52,7 @@ async function connect() {
     } catch (error) {
         if (numberOfAttempts <= 10) {
             console.error('Error al conectarse al coordindador, reintentando...')
+            await stopTime(1000);
             connect();
         } else {
             console.error('El coordinador no está disponible')
@@ -51,10 +61,14 @@ async function connect() {
     }
 }
 
+function stopTime(time) {
+    return new Promise(resolve => setTimeout(resolve, time));
+}
+
 
 // Canal para recibir nuevas conexiones 
 io.on('connection', function (socket) {
-    logger('WS', 'connection', 'Alguien se ha conectado con Sockets')
+    logger(' WS ', 'connection', 'El front del cliente se ha conectado con Sockets')
 });
 
 // Método para enviar la hora al front   
@@ -88,7 +102,7 @@ function modifyPort() {
             console.error('Error al crear o guardar el archivo:', err);
             return;
         }
-        logger('', 'modifyPort', 'Puerto cambiado exitosamente');
+        logger(' JS ', 'modifyPort', 'Puerto cambiado exitosamente');
     });
 }
 
@@ -96,14 +110,16 @@ function modifyPort() {
 function newTimeInterval() {
     const numbers = [4000, 2000, 500, 300];
     const randomIndex = Math.floor(Math.random() * numbers.length);
-    logger('', 'newTimeInterval', `El intervalo de tiempo elegido es de: ${numbers[randomIndex]} ms`);
+    logger(' JS ', 'newTimeInterval', `El intervalo de tiempo elegido es de: ${numbers[randomIndex]} ms`);
     return numbers[randomIndex];
 }
 
 
 // Método para mostar logs en formato protocolo | endpoint | mensaje
 function logger(protocol, endpoint, message) {
+    let log = `${new Date(Date.now()).toLocaleTimeString()} | ${protocol} | ${endpoint} | ${message}`;
     console.log(`${new Date(Date.now()).toLocaleTimeString()} | ${protocol} | ${endpoint} | ${message}`);
+    socket.emit('logs', {port:portClient, ip:ipClient, content:log})
 }
 
 // Método para enviar la hora actual al coordinador

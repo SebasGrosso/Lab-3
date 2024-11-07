@@ -27,7 +27,7 @@ let numberOfAttempts = 0;
 const socket = io_client.connect(`http://${ipCoordinator}:${portCoordinator}`, { 'forceNew': true });
 
 socket.on('connect', () => {
-  console.log('Conectado al servidor de WebSocket');
+  logger(' WS ', 'connect', "Conectado al servidor de WebSocket");
 });
 
 // Método para conectarse por websockets al front del cliente
@@ -44,7 +44,7 @@ async function connect() {
         let data = await response.json();
 
         logicalTime = new Date(data.answer);
-        logger('HTTP', 'addServer', data.answer);
+        logger('HTTP', 'addServer', `La hora enviada por el coordinador es: ${new Date (data.answer).toLocaleTimeString()}`);
 
         createLogicalClock();
         modifyPort();
@@ -68,7 +68,7 @@ function stopTime(time) {
 
 // Canal para recibir nuevas conexiones 
 io.on('connection', function (socket) {
-    logger('WS', 'connection', 'Alguien se ha conectado con Sockets')
+    logger(' WS ', 'connection', 'El front del cliente se ha conectado con Sockets')
 });
 
 // Método para enviar la hora al front   
@@ -102,7 +102,7 @@ function modifyPort() {
             console.error('Error al crear o guardar el archivo:', err);
             return;
         }
-        logger('', 'modifyPort', 'Puerto cambiado exitosamente');
+        logger(' JS ', 'modifyPort', 'Puerto cambiado exitosamente');
     });
 }
 
@@ -110,7 +110,7 @@ function modifyPort() {
 function newTimeInterval() {
     const numbers = [4000, 2000, 500, 300];
     const randomIndex = Math.floor(Math.random() * numbers.length);
-    logger('', 'newTimeInterval', `El intervalo de tiempo elegido es de: ${numbers[randomIndex]} ms`);
+    logger(' JS ', 'newTimeInterval', `El intervalo de tiempo elegido es de: ${numbers[randomIndex]} ms`);
     return numbers[randomIndex];
 }
 
@@ -130,9 +130,9 @@ app.get('/sendHour', async (req, res) => {
 
 // Métod para recibir al ajuste de la hora
 app.post('/updateHour', async (req, res) => {
-    logger('HTTPS', 'updateHour', 'Comenzando la sincronización')
+    logger('HTTP', 'updateHour', 'Comenzando la sincronización')
     const data = req.body;
-    logger('HTTPS', 'updateHour', `El ajuste que llegó es de: ${data.adjustmentTime}`)
+    logger('HTTP', 'updateHour', `El ajuste que llegó es de: ${data.adjustmentTime}`)
     logicalTime = new Date(logicalTime.getTime() + data.adjustmentTime);
     logger('HTTP', 'updateHour', `La hora ha sido sincronizada`);
 });
