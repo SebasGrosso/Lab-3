@@ -15,10 +15,13 @@
         <h1>Coordinador</h1>
         <button @click="syncHour">Lanzar instancia</button>
         <button @click="syncHour">Algoritmo de Berkeley</button>
-
-        <pre> {{ clientLogs }}</pre>
-        <button @click="fetchTime">Ver hora API</button>
         <h2>Hora API: {{ referenceTime }}</h2>
+        <div v-for="server in serversList">
+            <div class="server-info">
+                <p>{{server.nameServer}} <a :href="'http://' + server.ipServer + ':' + server.portServer" target="_blank">http://{{ server.ipServer }}:{{ server.portServer }}</a> </p>
+            </div>
+        </div>
+        <pre> {{ clientLogs }}</pre>
     </div>
     <script src="coordinator.js"></script>
 </body>

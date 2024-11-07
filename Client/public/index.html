@@ -3,21 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Algorimto de Berkeley</title>
+    <title>Algoritmo de Berkeley</title>
     <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
 </head>
 <body>
-    <div id="app">
-        <section>
-            <div  class="clock">
-                <span id="time">{{ formatTime(logicalTime) }} {{portClientBack}}</span>
-            </div>
-        </section>
-        <div>
-            <pre> {{ clientLogs }}</pre>
-        </div>
+    <div id="app" class="container">
+        <header>
+            <h1>Algoritmo de Berkeley</h1>
+        </header>
+        <main>
+            <section class="clock-section">
+                <div class="clock">
+                    <span id="time">{{ formatTime(logicalTime) }}</span>
+                </div>
+            </section>
+            <section class="log-section">
+                <h2>Logs</h2>
+                <pre>{{ clientLogs }}</pre>
+            </section>
+        </main>
     </div>
     <script src="client.js"></script>
 </body>

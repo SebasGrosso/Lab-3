@@ -2,6 +2,7 @@ new Vue({
     el: '#app',
     data: {
         clientLogs: [],
+        serversList: [],
         referenceTime: '',
         ipCoordinatorBack: 'localhost',
         portCoordinatorBack: '5000'
@@ -16,27 +17,14 @@ new Vue({
             this.socket.on('currentLogs', (data) => {
                 this.clientLogs.push(data); 
             });
-        },
-        async fetchTime() {
-            console.log("Obteniendo la hora de referencia...");
-            try {
-                const response = await fetch('https://timeapi.io/api/time/current/zone?timeZone=America%2FBogota');
-                const data = await response.json();
-        
-                let utcDate = new Date(data.dateTime);
-                this.referenceTime = new Date(utcDate.getTime()).toLocaleTimeString();
-                numberOfAttempts = 0;
-        
-                return colombiaTimeDate;
-            } catch (error) {
-                if (numberOfAttempts < 5) {
-                    numberOfAttempts++;
-                    console.error(`Error al obtener la hora de la API, reintentando por ${numberOfAttempts + 1} vez...`);
-                    return await hourAPI();
-                } else {
-                    console.error('No fue posible obtener la hora de la API');
-                }
-            }
+
+            this.socket.on('serversList', (data) => {
+                this.serversList = data; 
+            });
+
+            this.socket.on('hourCoordinator', (data) => {
+                this.referenceTime = new Date(data).toLocaleTimeString(); 
+            });
         },
         async syncHour() {
             console.log('Sincronizando las horas')

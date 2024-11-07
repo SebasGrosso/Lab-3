@@ -4,7 +4,7 @@ new Vue({
         logicalTime: '',
         ipClientBack:'',
         portClientBack:'',
-        clientLogs: []
+        clientLogs:  []
     },
     methods: {
         // Método para conectarse por websockets al back del cliente
